@@ -35,8 +35,7 @@ function user_last_login_block_info() {
   // Show their last login info.
   $blocks['user_last_login']['info'] = t("Last login");
   $blocks['user_last_login']['properties']['administrative'] = TRUE;
-  $blocks['user_last_login']['cache'] = DRUPAL_CACHE_PER_USER;
-
+  
   return $blocks;
 }
 
