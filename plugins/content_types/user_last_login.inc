@@ -18,12 +18,8 @@ $plugin = array(
  * Helper function to render ctool plugin content.
  */
 function user_last_login_content_type_render($subtype, $conf, $args, $context = NULL) {
-  $pane = new stdClass();
-  $pane->title = t('Last Login');
-
-  $block = module_invoke('user_last_login', 'block_view', 'user_last_login');
-  $pane->content = $block['content'];
-
+  $pane = (object)module_invoke('user_last_login', 'block_view', 'user_last_login');
+  
   return $pane;
 }
 
