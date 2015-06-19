@@ -1,0 +1,5 @@
+name = User Last Login
+description = Presents a block to show user's last login.
+core = 7.x
+
+dependencies[] = ctools

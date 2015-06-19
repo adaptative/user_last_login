@@ -1,0 +1,36 @@
+<?php
+/**
+ * @file
+ * Install, update and uninstall blocks.
+ */
+
+/**
+ * Implements hook_install().
+ *
+ * Perform actions to set up the site's blocks.
+ */
+function user_last_login_install() {
+  // Enable some standard blocks.
+  $theme = variable_get('theme_default', 'none');
+  $list_regions = system_region_list($theme, REGIONS_VISIBLE);
+
+  $blocks = array(
+    array(
+      'module' => 'user_last_login',
+      'delta' => 'user_last_login',
+      'theme' => $theme,
+      'status' => 1,
+      'weight' => 1,
+      'region' => 'left_side_rail',
+      'pages' => '',
+      'title' => '',
+      'cache' => -1,
+      'visibility' => BLOCK_VISIBILITY_NOTLISTED,
+    ),
+  );
+
+  // Install all defined blocks.
+  if (array_key_exists('left_side_rail', $list_regions)) {
+    _user_last_login_blocks_install_blocks($blocks);
+  }
+}

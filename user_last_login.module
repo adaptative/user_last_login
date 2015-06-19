@@ -1,0 +1,150 @@
+<?php
+/**
+ * @file
+ * Contains code for user's last login block.
+ */
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function user_last_login_ctools_plugin_directory($owner, $plugin_type) {
+  // We'll be nice and limit scandir() calls.
+  if ($owner == 'ctools' && $plugin_type == 'content_types') {
+    return 'plugins/' . $plugin_type;
+  }
+}
+
+/**
+ * Implements hook_user_logout().
+ */
+function user_last_login_user_logout($account) {
+  // Now save the user's current login timestamp to user's data field.
+  $last_login = array('last_login' => $account->login);
+  $data = !empty($account->data) ? array_merge($account->data, $last_login) : $last_login;
+
+  db_update('users')
+    ->fields(array('data' => serialize($data)))
+    ->condition('uid', $account->uid)
+    ->execute();
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function user_last_login_block_info() {
+  // Show their last login info.
+  $blocks['user_last_login']['info'] = t("Last login");
+  $blocks['user_last_login']['properties']['administrative'] = TRUE;
+  $blocks['user_last_login']['cache'] = DRUPAL_CACHE_PER_USER;
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function user_last_login_block_view($delta = '') {
+  switch ($delta) {
+    case 'user_last_login':
+      if (user_is_anonymous()) {
+        return;
+      }
+      // Get information about the user's last login. If no information is
+      // found, the block is not displayed.
+      global $user;
+      if ($last_login = user_last_login($user)) {
+        drupal_add_js(drupal_get_path('module', 'user_last_login') . '/js/user-last-login-timeout.js', 'file');
+
+        $last_login_message = isset($user->data['last_login_message']) ? $user->data['last_login_message'] : "You last logged in at";
+
+        $output = '<div class="last_login"><p>' . check_plain($last_login_message) . format_date($last_login, 'medium', '', $user->timezone) . '</p></div>';
+        $block['subject'] = t('Last login');
+        $block['content'] = $output;
+        return $block;
+      }
+      break;
+  }
+}
+
+/**
+ * Provide data about the last login for a user.
+ *
+ * @return object|bool
+ *   An object containing information about the last login or FALSE if no
+ *   result is found.
+ */
+function user_last_login($account = NULL) {
+  $last_login = $account->data['last_login'];
+  if (user_is_anonymous() || $last_login == '') {
+    return FALSE;
+  }
+
+  return $last_login;
+}
+
+/**
+ * Technical function to perform a query to insert a new block.
+ */
+function _user_last_login_blocks_install_blocks($blocks) {
+  $query = db_insert('block')->fields(array(
+    'module',
+    'delta',
+    'theme',
+    'status',
+    'weight',
+    'region',
+    'pages',
+    'cache',
+    'visibility',
+  ));
+  foreach ($blocks as $block) {
+    $query->values($block);
+  }
+  $query->execute();
+}
+
+/**
+ * Implements hook_form_alter().
+ *
+ * Add user settings form field.
+ */
+function user_last_login_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'user_profile_form') {
+    $form['user_settings'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('User settings'),
+      '#weight' => 100,
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+    );
+
+    $form['user_settings']['last_login_message'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Custom last login message'),
+      '#default_value' => t('You last logged in at'),
+      '#size' => 60,
+      '#weight' => 1,
+    );
+
+    $form['#submit'][] = "user_last_login_settings_save";
+  }
+}
+
+/**
+ * User form submit handler.
+ *
+ * Saves user settings data.
+ */
+function user_last_login_settings_save($form, &$form_state) {
+  $last_login_message = $form_state['values']['last_login_message'];
+  $uid = $form_state['values']['uid'];
+  $account = user_load($uid);
+
+  $settings = array('last_login_message' => $last_login_message);
+  $data = !empty($account->data) ? array_merge($account->data, $settings) : $settings;
+
+  db_update('users')
+    ->fields(array('data' => serialize($data)))
+    ->condition('uid', $account->uid)
+    ->execute();
+}
