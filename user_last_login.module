@@ -52,13 +52,19 @@ function user_last_login_block_view($delta = '') {
       // found, the block is not displayed.
       global $user;
       if ($last_login = user_last_login($user)) {
-        drupal_add_js(drupal_get_path('module', 'user_last_login') . '/js/user-last-login-timeout.js', 'file');
-
-        $last_login_message = isset($user->data['last_login_message']) ? $user->data['last_login_message'] : "You last logged in at";
+        $last_login_message = isset($user->data['last_login_message']) ? $user->data['last_login_message'] : "You last logged in at ";
 
         $output = '<div class="last_login"><p>' . check_plain($last_login_message) . format_date($last_login, 'medium', '', $user->timezone) . '</p></div>';
         $block['subject'] = t('Last login');
-        $block['content'] = $output;
+        $block['content'] = array(
+          '#markup' => $output,
+          '#attached' => array(
+            'js' => array(
+              drupal_get_path('module', 'user_last_login')
+              . '/js/user-last-login-timeout.js'
+            ),
+          ),
+        );
         return $block;
       }
       break;
@@ -141,7 +147,11 @@ function user_last_login_settings_save($form, &$form_state) {
 
   $settings = array('last_login_message' => $last_login_message);
   $data = !empty($account->data) ? array_merge($account->data, $settings) : $settings;
-
+  
+  // The "user_save" function is not used intentionally because it further call 
+  // a lot of functions and hooks which is not required in this case.
+  // In favour of performance boost I dropped the call to use "user_save" function.
+  
   db_update('users')
     ->fields(array('data' => serialize($data)))
     ->condition('uid', $account->uid)

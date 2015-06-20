@@ -1,7 +1,18 @@
-IMO, This feature might create some performance drawback for a site like 
-weather.com having such a high traffic. I used user object to save this information which get cached in the drupal system which might give some performance advantage.
+IMO, The issue with the given list of task is that, no emphasis is given to 
+implement the caching mechanism. Which is highly recommended to the high 
+trafficked website like weather.com. I understand that the “Last Login” parameter 
+can not be cached but there are such caching mechanism exists to overcome this issue. 
+Edge side include is such an example.
 
-But still we are querying the database to get the cached copy. it is fine with 
-the site having moderate traffic but web sites like weather.com having huge amount of simultaneous access will create a lot of server load even with this little feature.
+Typically, a page is consist of a mix of cacheable and non cacheable content 
+(such as user specific content like “Last Login”). Previously, the presence of 
+any non cacheable content on a page would have rendered the whole page non cacheable, 
+even if that portion was a small percentage of the overall content.
 
-IMO, It would rather good to use techniques that process the data at client side (Browser) to render this feature.      
+With ESI, the non cacheable portion can be split off into a different request, 
+meaning that the vast majority of the page can be cached. This increases the ratio 
+of cached requests to non cached requests (what we call the "cache-hit ratio”).
+
+IMO, The given requirement for “user’s Last Login” should also include the 
+requirement of implementing appropriate caching mechanism to maintain the 
+performance of such a high trafficked website. 
